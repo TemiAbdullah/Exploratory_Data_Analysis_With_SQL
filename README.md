@@ -6,6 +6,7 @@ For this project, I attempted to combine two of my interests; football (soccer) 
 
 ## Data Source and Description
 The data used for this project was gotten from [Kaggle](https://www.kaggle.com/datasets/hugomathien/soccer). The database contains +25,000 matches, +10,000 players, 11 European Countries with their lead championship, seasons 2008 to 2016, detailed match events (goal types, possession, corner, cross, fouls, cards etc…) for +10,000 matches and so on. 
+
 The SQL skills demonstrated in this project include:
 * Data Transformation
 * Data Joins

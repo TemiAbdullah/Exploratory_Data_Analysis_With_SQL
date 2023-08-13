@@ -1,4 +1,5 @@
 # Exploring European Soccer Data With SQL
+()[]
 
 For this project, I attempted to combine two of my interests; football (soccer) and data analysis with SQL. I decided to analyze Barcelona's 2015/2016 league season. Looking at their form, their goal scoring and other relevant metrics that can be used to paint a broad picture of their performance in that league season. 
 ---

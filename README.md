@@ -6,6 +6,15 @@ For this project, I attempted to combine two of my interests; football (soccer) 
 
 ## Data Source and Description
 The data used for this project was gotten from [Kaggle](https://www.kaggle.com/datasets/hugomathien/soccer). The database contains +25,000 matches, +10,000 players, 11 European Countries with their lead championship, seasons 2008 to 2016, detailed match events (goal types, possession, corner, cross, fouls, cards etc…) for +10,000 matches and so on. 
+The SQL skills demonstrated in this project include:
+* Data Transformation
+* Data Joins
+* Data Aggregation
+* Common Table Expression (CTE)
+* Conditional Logic
+* Data Formatting
+* Data Filtering
+* Mathematical Operations etc. 
 
 For my project, only the "Matches" table and the "Teams" table were used. An overview of both tables are contained below. 
 
@@ -83,6 +92,17 @@ To analyze Barcelona's performance for the 2015/2016 season, I sought to answer 
 * Their home form vs their away form.
 * Their form for each month of the football calender year.
 * The scorline of all the games played. Including their biggest wins and their biggest losses.
+
+Before the starting the analysis, I thought it would be useful to find the keys and values that uniquely identify Bareclona.
+```sql
+SELECT * FROM Team$ WHERE team_long_name = 'FC Barcelona' 
+--the team_api_id is the primary key for this table. It can be used to identify each specific team. For barcelona it is 8634. 
+```
+| id | team_api_id | team_fifa_api_id | team_long_name | team_short_name |
+| --- | --- | --- | --- | --- |
+| 43042	| 8634 | 241 |	FC Barcelona |	BAR |
+
+I'll use 8634 to identify Barcelona from here on as it is a unique value.
 
 
 #### 1. The total number of games Barcelona played in the 2015/2016 season. And the games played at home and away. 
@@ -354,7 +374,7 @@ ORDER BY match_date;
 #### 10. Biggest wins and biggest losses. 
 The query above can be repurposed to see a list of Barcelona's 5 biggest wins and 5 biggest losses across the season. This can be done simply by changing the ORDER BY to goal_difference. 
 
-##### 5 biggest wins
+##### Biggest wins
 ```sql
 --insert the code above
 ORDER BY barcelona_goal_difference  DESC
@@ -376,9 +396,9 @@ ORDER BY barcelona_goal_difference  DESC
 | --- | --- | --- | --- | --- | 
 | 2015-09-23 |	RC Celta de Vigo vs FC Barcelona |	1 |	4 |	-3 |
 
-
+---
 ## Insights
-/* Some of the insights found in the data from the queries above. 
+
 1. The "Team$" table has 299 rows and 5 columns. The columns are id, team_api_id, team_fifa_api_id, team_long_name and team_short_name. 
 2. The "Match$" table has 25979 and 11 columns. The 11 columns include the id, country_id, season, home_team, away_team etc. 
 3. There a couple of unique keys that can be used to identify Barcelona. Its team_api_id, team_fifa_api_id. The team_long_name and team_short_name can also be used, but there is not guarantee that they are unique.

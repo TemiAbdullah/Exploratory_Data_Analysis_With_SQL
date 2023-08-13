@@ -246,37 +246,151 @@ WHERE season = '2015/2016'
 | 13 | 3 |	3 |	45 | 15 |
 
 #### 8. Their form across the football calendar year
-After analyzing their form with respect to home and away games. I'd also like to analyze it with respect to the months in the football season. This will be used to determine the months where they played well and those where they didnt.
+After analyzing their form with respect to home and away games. I'd also like to analyze it with respect to the months in the soccer season. This will be used to determine the months where they played well and those where they didnt. The La Liga calender for the 205/2016 season started in August 2015
 ```sql 
+SELECT
+    DATENAME(MONTH, date) AS month,
+	SUM(CASE 
+        WHEN home_team_api_id = 8634 AND home_team_goal > away_team_goal THEN 1
+        WHEN away_team_api_id = 8634 AND away_team_goal > home_team_goal THEN 1
+        ELSE 0 END) AS wins,
+    SUM(CASE 
+        WHEN home_team_api_id = 8634 AND home_team_goal < away_team_goal THEN 1
+        WHEN away_team_api_id = 8634 AND away_team_goal < home_team_goal THEN 1
+        ELSE 0 END) AS losses,
+    SUM(CASE 
+        WHEN (home_team_api_id = 8634 OR away_team_api_id = 8634) AND home_team_goal = away_team_goal THEN 1
+        ELSE 0 END) AS draws   
+FROM Match$
+WHERE season = '2015/2016' AND (home_team_api_id = 8634 OR away_team_api_id = 8634)
+GROUP BY DATENAME(MONTH, date)
+ORDER BY MIN(date);
+```
+
+| month | wins | losses | draws |
+| --- | --- |--- | --- |
+| August | 2 | 0 | 0 |
+| September | 3	| 1 | 0 |
+| October | 3 | 1 | 0 |
+| November | 3	| 0 | 0 |
+| December | 1	| 0 | 2 |
+| January | 4 |	0 | 1 |
+| February | 5 | 0 | 0 |
+| March	| 3 | 0 | 1 |
+| April	| 3 | 3 | 0 |
+| May | 2 | 0 |	0 |
+
+#### 9. Scoreline for all 38 games Barcelona played in the 2015/2016 season. 
+Finally, I'd like to take a look at all the games they played in the season and the scorelines in those games.
+```sql
+SELECT
+    CONVERT(DATE, date) AS match_date,
+	CONCAT(ht.team_long_name, ' vs ', at.team_long_name) AS match,
+	CASE	
+		WHEN ht.team_long_name = 'FC BARCELONA' THEN m.home_team_goal
+		WHEN ht.team_long_name = 'FC BARCELONA' THEN m.away_team_goal
+		ELSE m.away_team_goal 
+		END AS barcelona_goals,
+	CASE 
+		WHEN ht.team_long_name != 'FC BARCELONA' THEN m.home_team_goal
+		WHEN ht.team_long_name != 'FC BARCELONA' THEN m.away_team_goal
+		ELSE m.away_team_goal 
+		END AS opposition_goals,
+	CASE
+        WHEN ht.team_long_name = 'FC Barcelona' THEN m.home_team_goal - m.away_team_goal
+        WHEN at.team_long_name = 'FC Barcelona' THEN m.away_team_goal - m.home_team_goal
+        ELSE NULL -- Handle cases where Barcelona is neither the home nor away team (optional)
+    END AS barcelona_goal_difference
+FROM Match$ AS m
+JOIN Team$ AS ht ON m.home_team_api_id = ht.team_api_id
+JOIN Team$ AS at ON m.away_team_api_id = at.team_api_id
+WHERE m.season = '2015/2016'
+    AND (ht.team_long_name = 'FC Barcelona' OR at.team_long_name = 'FC Barcelona')
+ORDER BY match_date;
+```
+
+| date | match | barcelona_goals | opposition_goals | barcelona_goal_difference | 
+| --- | --- | --- | --- | --- | 
+| 2015-08-23 | Athletic Club de Bilbao vs FC Barcelona | 1 |	0 |	1 |
+| 2015-08-29 | FC Barcelona vs MÃ¡laga CF |	1 |	0 |	1 |
+| 2015-09-12 |	AtlÃ©tico Madrid vs FC Barcelona |	2 |	1 |	1 |
+| 2015-09-20 |	FC Barcelona vs Levante UD |	4 |	1 |	3 |
+| 2015-09-23 |	RC Celta de Vigo vs FC Barcelona |	1 |	4 |	-3 |
+| 2015-09-26 |	FC Barcelona vs UD Las Palmas |	2 |	1 |	1 |
+| 2015-10-03 |	Sevilla FC vs FC Barcelona |	1 |	2 |	-1 |
+| 2015-10-17 |	FC Barcelona vs Rayo Vallecano |	5 |	2 |	3 |
+| 2015-10-25 |	FC Barcelona vs SD Eibar |	3 |	1 |	2 |
+| 2015-10-31 |	Getafe CF vs FC Barcelona |	2 |	0 |	2 |
+| 2015-11-08 |	FC Barcelona vs Villarreal CF |	3 |	0 |	3 |
+| 2015-11-21 |	Real Madrid CF vs FC Barcelona |	4 |	0 |	4 |
+| 2015-11-28 |	FC Barcelona vs Real Sociedad |	4 |	0 |	4 |
+| 2015-12-05 |	Valencia CF vs FC Barcelona |	1 |	1 |	0 |
+| 2015-12-12 |	FC Barcelona vs RC Deportivo de La CoruÃ±a |	2 |	2 |	0 |
+| 2015-12-30 |	FC Barcelona vs Real Betis BalompiÃ© |	4 |	0 |	4 |
+| 2016-01-02 |	RCD Espanyol vs FC Barcelona |	0 |	0 |	0 |
+| 2016-01-09 |	FC Barcelona vs Granada CF |	4 |	0 |	4 |
+| 2016-01-17 |	FC Barcelona vs Athletic Club de Bilbao	| 6 |	0 |	6 |
+| 2016-01-23 |	MÃ¡laga CF vs FC Barcelona |	2 |	1 |	1 |
+| 2016-01-30 |	FC Barcelona vs AtlÃ©tico Madrid |	2 |	1 |	1 |
+| 2016-02-07 |	Levante UD vs FC Barcelona |	2 |	0 |	2 |
+| 2016-02-14 |	FC Barcelona vs RC Celta de Vigo |	6 | 	1 |	5 |
+| 2016-02-17 |	Real Sporting de GijÃ³n vs FC Barcelona |	3 |	1 |	2 |
+| 2016-02-20 |	UD Las Palmas vs FC Barcelona |	2 |	1 |	1 |
+| 2016-02-28 |	FC Barcelona vs Sevilla FC |	2 |	1 |	1 |
+| 2016-03-03 |	Rayo Vallecano vs FC Barcelona |	5 |	1 |	4 |
+| 2016-03-06 |	SD Eibar vs FC Barcelona |	4 |	0 |	4 |
+| 2016-03-12 |	FC Barcelona vs Getafe CF |	6 |	0 |	6 |
+| 2016-03-20 |	Villarreal CF vs FC Barcelona |	2 |	2 |	0 |
+| 2016-04-02 |	FC Barcelona vs Real Madrid CF |	1 |	2 |	-1 |
+| 2016-04-09 |	Real Sociedad vs FC Barcelona |	0 |	1 |	-1 |
+| 2016-04-17 |	FC Barcelona vs Valencia CF |	1 |	2 |	-1 |
+| 2016-04-20 |	RC Deportivo de La CoruÃ±a vs FC Barcelona |	8 |	0 |	8 |
+| 2016-04-23 |	FC Barcelona vs Real Sporting de GijÃ³n |	6 |	0 |	6 |
+| 2016-04-30 |	Real Betis BalompiÃ© vs FC Barcelona |	2 |	0 |	2 |
+| 2016-05-08 |	FC Barcelona vs RCD Espanyol |	5 |	0 |	5 |
+| 2016-05-14 |	Granada CF vs FC Barcelona |	3 |	0 |	3 |
 
 
+#### 10. Biggest wins and biggest losses. 
+The query above can be repurposed to see a list of Barcelona's 5 biggest wins and 5 biggest losses across the season. This can be done simply by changing the ORDER BY to goal_difference. 
+
+##### 5 biggest wins
+```sql
+--insert the code above
+ORDER BY barcelona_goal_difference  DESC
+```
+| date | match | barcelona_goals | opposition_goals | barcelona_goal_difference | 
+| --- | --- | --- | --- | --- | 
+| 2016-04-20 |	RC Deportivo de La CoruÃ±a vs FC Barcelona |	8 |	0 |	8 |
+| 2016-04-23 |	FC Barcelona vs Real Sporting de GijÃ³n |	6 |	0 |	6 |
+| 2016-03-12 |	FC Barcelona vs Getafe CF |	6 |	0 |	6 |
+| 2016-01-17 |	FC Barcelona vs Athletic Club de Bilbao	| 6 |	0 |	6 |
+| 2016-02-14 |	FC Barcelona vs RC Celta de Vigo |	6 | 	1 |	5 |
+
+#### Biggest loss
+```sql
+--insert code from 9.
+ORDER BY barcelona_goal_difference  DESC
+```
+| date | match | barcelona_goals | opposition_goals | barcelona_goal_difference | 
+| --- | --- | --- | --- | --- | 
+| 2015-09-23 |	RC Celta de Vigo vs FC Barcelona |	1 |	4 |	-3 |
 
 
+## Insights
+/* Some of the insights found in the data from the queries above. 
+1. The "Team$" table has 299 rows and 5 columns. The columns are id, team_api_id, team_fifa_api_id, team_long_name and team_short_name. 
+2. The "Match$" table has 25979 and 11 columns. The 11 columns include the id, country_id, season, home_team, away_team etc. 
+3. There a couple of unique keys that can be used to identify Barcelona. Its team_api_id, team_fifa_api_id. The team_long_name and team_short_name can also be used, but there is not guarantee that they are unique.
+4. Barcelona played 38 games in the 2015/2016 season with 19 at home and 19 away. 
+5. They won 29 games, lost 5 and drew 4. Resulting in 91 points and a win percentage of 77%.  
+6. Barcelona was able to score 112 goals and conceded only 29.
+7. The analysis of their home and away form showed that their home form was better than their away form. They won more, lost less, drew less, scored more and conceded less at home than away.
+8. The analysis of their form based on the months in the calendar year showed that they enjoyed their best form in February and their worst in April.
+9. They only failed to score in two games throughout the season. In their away games against Real Sociedad and RCD Espanyol. 
+10. Their biggest win of the season was an 8-0 win against RC Deportivo de La Coruna. While their biggest loss was in a game against Celta Vigo where they lost 4-1.
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-The full .SQL file can be found [here](https://github.com/TemiAbdullah/Exploratory_Data_Analysis_With_SQL/blob/c6520a66fd6efd174e3d5fe0dd5a855989745aed/European%20Soccer%20Project.sql). Any comments and feedback would be greatly appreciated. 
+The .SQL file can be found [here](https://github.com/TemiAbdullah/Exploratory_Data_Analysis_With_SQL/blob/c6520a66fd6efd174e3d5fe0dd5a855989745aed/European%20Soccer%20Project.sql). Any comments and feedback would be greatly appreciated. 
 
 

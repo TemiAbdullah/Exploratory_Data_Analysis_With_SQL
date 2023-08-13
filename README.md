@@ -58,6 +58,7 @@ SELECT column_name, data_type
 FROM information_schema.columns
 WHERE table_name = 'Match$';
 ```
+
 | column_name | data_type |
 | --- | --- |
 | id | float |
@@ -82,6 +83,199 @@ To analyze Barcelona's performance for the 2015/2016 season, I sought to answer 
 * Their home form vs their away form.
 * Their form for each month of the football calender year.
 * The scorline of all the games played. Including their biggest wins and their biggest losses.
+
+
+#### 1. The total number of games Barcelona played in the 2015/2016 season. And the games played at home and away. 
+Soccer fans should already know that it's 38 with 19 home games and 19 away games.
+```sql
+SELECT
+    COUNT(*) AS total_games_played,
+    SUM(CASE WHEN home_team_api_id = 8634 THEN 1 ELSE 0 END) AS home_games_played,
+    SUM(CASE WHEN away_team_api_id = 8634 THEN 1 ELSE 0 END) AS away_games_played
+FROM Match$
+WHERE season = '2015/2016' 
+    AND (home_team_api_id = 8634 OR away_team_api_id = 8634);
+```
+
+| total_games_played | home_games_played | away_games_played |
+| --- | --- | --- |
+| 38 | 19 | 19 |
+
+
+#### 2. Their wins, losses and draws in the season. 
+```sql
+SELECT
+    SUM(CASE 
+        WHEN home_team_api_id = 8634 AND home_team_goal > away_team_goal THEN 1
+        WHEN away_team_api_id = 8634 AND away_team_goal > home_team_goal THEN 1
+        ELSE 0 END) AS wins,
+    SUM(CASE 
+        WHEN home_team_api_id = 8634 AND home_team_goal < away_team_goal THEN 1
+        WHEN away_team_api_id = 8634 AND away_team_goal < home_team_goal THEN 1
+        ELSE 0 END) AS losses,
+    SUM(CASE 
+        WHEN (home_team_api_id = 8634 OR away_team_api_id = 8634) AND home_team_goal = away_team_goal THEN 1
+        ELSE 0
+    END) AS draws
+FROM Match$
+WHERE season = '2015/2016' 
+    AND (home_team_api_id = 8634 OR away_team_api_id = 8634);
+```
+
+| wins | losses | draws |
+| --- |--- | --- |
+| 29 | 5 | 4 |
+
+#### 3. Their win percentage. 
+The previous query showed that Barcelona won a majority of their games in the season. But it could also be useful o know the percenatage of wins of the 38 games played. 
+```sql
+WITH Games AS (
+    SELECT
+        CASE 
+            WHEN home_team_api_id = 8634 AND home_team_goal > away_team_goal THEN 1
+            WHEN away_team_api_id = 8634 AND away_team_goal > home_team_goal THEN 1
+            ELSE 0 
+        END AS wins
+    FROM Match$
+    WHERE season = '2015/2016'
+)
+SELECT CONCAT(CEILING(SUM(wins) * 100.0 / 38), '%') AS win_percentage
+FROM Games;
+```
+
+| win_percentage |
+| --- |
+| 77% |
+
+#### 4. The total number of points accrued from their wins, draws and losses. 
+In soccer, a win is 3 points, a loss is 0 and a draw is 1. 
+```sql
+WITH MatchResults AS (
+    SELECT
+        CASE
+            WHEN home_team_api_id = 8634 AND home_team_goal > away_team_goal THEN 3
+            WHEN away_team_api_id = 8634 AND away_team_goal > home_team_goal THEN 3
+            WHEN home_team_api_id = 8634 AND home_team_goal = away_team_goal THEN 1
+			WHEN away_team_api_id = 8634 AND away_team_goal = home_team_goal THEN 1
+            ELSE 0
+        END AS points
+    FROM Match$
+    WHERE season = '2015/2016'
+)
+SELECT SUM(points) AS total_points
+FROM MatchResults;
+```
+
+| total_points |
+| --- |
+| 91 |
+
+#### 5. The number of goals they scored and the number they conceded over the full course of the season. 
+```sql
+SELECT
+    SUM(CASE 
+        WHEN home_team_api_id = 8634 THEN home_team_goal
+        ELSE away_team_goal END) AS total_goals_scored,
+    SUM(CASE 
+        WHEN away_team_api_id = 8634 THEN home_team_goal
+        ELSE away_team_goal END) AS total_goals_conceded
+FROM Match$
+WHERE season = '2015/2016' 
+    AND (home_team_api_id = 8634 OR away_team_api_id = 8634);
+```
+
+| goals_scored | goals_conceded |
+| --- | --- |
+| 115 | 29 |
+
+#### 6. Their home form. 
+We know their wins, losses and draws over the season but it could also be useful go more in debth into their form to discover how many of those were at home. 
+```sql
+--Home Form = home wins, home losses, home_draws , home goals scored and conceded.
+SELECT 
+	SUM (CASE 
+		WHEN home_team_api_id = 8634 AND home_team_goal > away_team_goal THEN 1
+		ELSE 0 END) AS home_wins,
+	SUM (CASE
+		WHEN home_team_api_id = 8634 AND home_team_goal < away_team_goal THEN 1
+		ELSE 0 END) AS home_losses,
+	SUM (CASE
+		WHEN home_team_api_id = 8634 AND home_team_goal = away_team_goal THEN 1
+		ELSE 0 END) AS home_draws,
+	SUM (CASE
+		WHEN home_team_api_id = 8634 THEN home_team_goal
+		ELSE 0 END) AS home_goals_scored,
+	SUM (CASE 
+		WHEN home_team_api_id = 8634 THEN away_team_goal
+		ELSE 0 END) AS home_goals_conceded
+FROM Match$
+	WHERE season = '2015/2016' 
+	AND (home_team_api_id = 8634 OR away_team_api_id = 8634);
+```
+
+| home_ wins | home_losses | home_draws | goals_scored_at_home | goals_conceded_at_home |
+| --- | --- | --- | --- | --- |
+| 16 |	2 |	1 | 67 | 14 |
+
+#### 7. Their away form
+```sql
+--Away form= away wins, losses, draws, goals scored and goals conceded
+SELECT
+	SUM (CASE
+		WHEN away_team_api_id = 8634 AND away_team_goal > home_team_goal THEN 1
+		ELSE 0 END) AS away_wins,
+	SUM (CASE
+		WHEN away_team_api_id = 8634 AND away_team_goal < home_team_goal THEN 1
+		ELSE 0	END) AS away_losses,
+	SUM (CASE
+		WHEN away_team_api_id = 8634 AND away_team_goal = home_team_goal THEN 1
+		ELSE 0 END) AS away_draws,
+	SUM (CASE
+		WHEN away_team_api_id = 8634 THEN away_team_goal
+		ELSE 0 END) AS away_goals_scored,
+	SUM (CASE 
+		WHEN away_team_api_id = 8634 THEN home_team_goal
+		ELSE 0 END) AS away_goals_conceded
+FROM Match$
+WHERE season = '2015/2016'
+	AND (home_team_api_id = 8634 OR away_team_api_id = 8634);
+```
+
+| away_wins | away_losses | away_draws | goals_scored_away | goals_conceded_away | 
+| --- | --- | --- | --- | --- |
+| 13 | 3 |	3 |	45 | 15 |
+
+#### 8. Their form across the football calendar year
+After analyzing their form with respect to home and away games. I'd also like to analyze it with respect to the months in the football season. This will be used to determine the months where they played well and those where they didnt.
+```sql 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 The full .SQL file can be found [here](https://github.com/TemiAbdullah/Exploratory_Data_Analysis_With_SQL/blob/c6520a66fd6efd174e3d5fe0dd5a855989745aed/European%20Soccer%20Project.sql). Any comments and feedback would be greatly appreciated. 
 

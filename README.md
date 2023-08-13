@@ -83,6 +83,6 @@ To analyze Barcelona's performance for the 2015/2016 season, I sought to answer 
 * Their form for each month of the football calender year.
 * The scorline of all the games played. Including their biggest wins and their biggest losses.
 
-The full .SQL file can be found here. Any comments and feedback would be greatly appreciated. 
+The full .SQL file can be found [here](https://github.com/TemiAbdullah/Exploratory_Data_Analysis_With_SQL/blob/c6520a66fd6efd174e3d5fe0dd5a855989745aed/European%20Soccer%20Project.sql). Any comments and feedback would be greatly appreciated. 
 
 
